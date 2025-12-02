@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ادوره الضباط </title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet" />
+
+<style>
+  body {
+    margin: 0; padding: 0;
+    font-family: 'Orbitron', sans-serif;
+    background: #111;
+    color: #eee;
+    overflow-x: hidden;
+  }
+
+  .background-blur {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRf5HNemAJbYxtZQuKfgn-anFL4B7i75GAJlcQXF1bYSgLqdfzKIV0VnItm8gDLmIpzJtw&usqp=CAU') 
+      no-repeat center center/cover;
+    filter: blur(8px) brightness(0.4);
+    z-index: -1;
+  }
+
+  .logo-top-right, .logo-top-left {
+    position: fixed;
+    top: 15px;
+    width: 70px; height: 70px;
+    background: url('https://media.discordapp.net/attachments/1370477402647560314/1441265771509711050/39C4B5EA-7046-41A2-8810-2577B114B1D0.png') no-repeat center/contain;
+    background-size: contain;
+    z-index: 1000;
+  }
+
+  .logo-top-right { right: 15px; }
+  .logo-top-left { left: 15px; }
+
+  .container {
+    width: 90%;
+    max-width: 900px;
+    margin: 60px auto 40px auto;
+    background: rgba(30,30,30,0.85);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px #666;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 2.5em;
+    margin-bottom: 25px;
+    text-shadow: 0 0 10px #fff;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1.2em;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    margin-bottom: 20px;
+  }
+
+  button {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.4em;
+    border-radius: 8px;
+    border: none;
+    background: #2c3e50;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  button:hover {
+    background: #34495e;
+  }
+
+  .question-card {
+    background: rgba(50,50,50,0.85);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 15px #444;
+  }
+
+  .answer {
+    padding: 12px;
+    border-radius: 8px;
+    margin: 10px 0;
+    background: rgba(200,200,200,0.05);
+    border: 1px solid #555;
+    cursor: pointer;
+  }
+
+  .answer:hover {
+    background: rgba(150,150,150,0.15);
+  }
+
+  .selected {
+    background: rgba(52, 73, 94, 0.6);
+    border-color: #34495e;
+    box-shadow: 0 0 12px #34495e;
+  }
+
+  .correct {
+    background: rgba(0, 255, 0, 0.15);
+    border-color: #0f0;
+  }
+
+  .wrong {
+    background: rgba(255, 0, 0, 0.15);
+    border-color: #f00;
+  }
+
+  #resultBox {
+    text-align: center;
+    margin-top: 30px;
+    padding: 20px;
+    border-radius: 12px;
+    font-size: 1.8em;
+  }
+
+  .pass { color: #0f0; }
+  .fail { color: #f00; }
+</style>
+</head>
+<body>
+
+  <div class="background-blur"></div>
+
+  <div class="logo-top-right"></div>
+  <div class="logo-top-left"></div>
+
+  <div class="container" id="infoPage">
+    <h1>دوره الضباط </h1>
+
+    <input id="nameInput" placeholder="الاسم " />
+    <input id="idInput" placeholder="الآيدي" />
+    <input id="milInput" placeholder="الكود العسكري" />
+
+    <button onclick="startExam()">دخول الاختبار</button>
+  </div>
+
+  <div class="container" id="examPage" style="display:none;">
+    <h1>دوره الضباط </h1>
+    <div id="questions"></div>
+    <button onclick="finishExam()">إنهاء الاختبار</button>
+  </div>
+
+  <div class="container" id="resultPage" style="display:none;">
+    <h1>النتيجة</h1>
+    <div id="resultBox"></div>
+  </div>
+
+<script>
+const questionsData = [
+  {
+    q: "ما هو دور قائد القوات المشتركة؟",
+    a: [
+      "أ) مسؤول عن وزارء القطاعات العسكرية",
+      "ب) مسؤول عن الشؤون المالية",
+      "ج) إدارة الموارد البشرية"
+    ],
+    c: 0
+  },
+  {
+    q: "ما هو الفرق بين الفا 5 والفا 6؟",
+    a: [
+      "أ) الفا 5 مستشار رئيس الوزراء والفا 6 ضابط أمن وزارات",
+      "ب) الفا 5 ضابط عمليات والفا 6 ضابط لوجستي",
+      "ج) الفا 5 قائد قطاع والفا 6 مسؤول إداري"
+    ],
+    c: 0
+  },
+  {
+    q: "في حال انتهاء تدريب العساكر، ما الذي تفعله بعدها؟",
+    a: [
+      "أ) إرفاق استبيان خاص بالتدريب ثم إعطاء العساكر البيونتات المستحقة",
+      "ب) إرسال تقرير للوزارة بدون إجراءات أخرى",
+      "ج) منح إجازة مباشرة دون تقييم"
+    ],
+    c: 0
+  },
+  {
+    q: "ماهي الجهات المعنية التي تصدر المركبات المهملة في المدينة؟",
+    a: [
+      "أ) الشرطة العسكرية",
+      "ب) القوات البحرية",
+      "ج) الأمن الإداري"
+    ],
+    c: 0
+  },
+  {
+    q: "من هو القطاع الذي يستطيع التعديل على الزي العسكري؟",
+    a: [
+      "أ) الاستخبارات المركزية",
+      "ب) الخدمات الطبية العسكرية",
+      "ج) الدفاع المدني العسكري"
+    ],
+    c: 0
+  },
+  {
+    q: "من هو القطاع المسؤول عن التحقيقات العسكرية؟",
+    a: [
+      "أ) الشرطة العسكرية",
+      "ب) القوات البرية",
+      "ج) الدفاع الجوي"
+    ],
+    c: 0
+  },
+  {
+    q: "ماهي النقاط الغير مسموح للشرطة العسكرية الدخول إليها؟",
+    a: [
+      "أ) الاستخبارات المركزية",
+      "ب) مركز القيادة الميدانية",
+      "ج) مكتب العلاقات العسكرية"
+    ],
+    c: 0
+  },
+  {
+    q: "كيف تنادي الشخص برتبة اللواء؟",
+    a: [
+      "أ) سعادة اللواء",
+      "ب) حضرة اللواء",
+      "ج) السيد اللواء"
+    ],
+    c: 0
+  },
+  {
+    q: "ما لون بريهة قائد القوات المشتركة؟",
+    a: [
+      "أ) عنابية",
+      "ب) سوداء",
+      "ج) زيتية"
+    ],
+    c: 0
+  },
+  {
+    q: "ما هو دور القيادة؟",
+    a: [
+      "أ) مسؤول عن الضباط الميدانيين والأفراد",
+      "ب) الإشراف على الصيانة فقط",
+      "ج) إدارة ملفات الرخص"
+    ],
+    c: 0
+  },
+  {
+    q: "عدد الرتب العسكرية",
+    a: [
+      "أ) 17 رتبة",
+      "ب) 10 رتب",
+      "ج) 5 رتب"
+    ],
+    c: 0
+  },
+  {
+    q: "ماهو دورك في حال كنت المسؤول في وجود الشرطة العسكرية؟",
+    a: [
+      "أ) تنظيم الأفراد وتجهيزهم للتفتيش",
+      "ب) تجاهل التفتيش",
+      "ج) تحويل الجميع للمسؤول الرابع"
+    ],
+    c: 0
+  },
+  {
+    q: "ماهو دور رئاسة الوزراء؟",
+    a: [
+      "أ) الآمر الناهي",
+      "ب) الإشراف على التدريب",
+      "ج) إصدار الميزانية"
+    ],
+    c: 0
+  },
+  {
+    q: "ما الفرق بين الضابط والقيادة؟",
+    a: [
+      "أ) الضابط ميداني والقيادة إداري وميداني",
+      "ب) الضابط إداري فقط",
+      "ج) القيادة ميدانية فقط"
+    ],
+    c: 0
+  },
+  {
+    q: "ما الفرق بين أعضاء مجلس الوزراء وأعضاء رئاسة الوزراء؟",
+    a: [
+      "أ) المجلس: الوزراء ونوابهم وقادة القوات المشتركة – الرئاسة: ضباط أمن الوزارات ورئيس الوزراء ونائبه ومستشاره",
+      "ب) المجلس ضباط فقط",
+      "ج) الرئاسة مستشارون فقط"
+    ],
+    c: 0
+  },
+  {
+    q: "ماهي القطاعات التي مسموح لها الخروج للمدينة الثانية والثالثة بدون إذن من حرس الحدود؟",
+    a: [
+      "أ) الاستخبارات والقوات المسلحة",
+      "ب) الشرطة العسكرية",
+      "ج) الدفاع المدني"
+    ],
+    c: 0
+  },
+  {
+    q: "من الشخص الذي يلبس البريهة العنابية؟",
+    a: [
+      "أ) من رتبة مقدم إلى فريق أول ويحمل دورة ركن",
+      "ب) من رتبة ملازم",
+      "ج) الجنود فقط"
+    ],
+    c: 0
+  },
+  {
+    q: "عدد الوزارات مع القطاعات التابعة لها؟",
+    a: [
+      "أ) وزارتان: الداخلية والدفاع",
+      "ب) 3 وزارات",
+      "ج) وزارة واحدة"
+    ],
+    c: 0
+  },
+  {
+    q: "في حال وجود قيادة مخالف، ما التصرف الصحيح؟",
+    a: [
+      "أ) التحدث للمسؤول الثالث ثم الثاني ثم الأول",
+      "ب) رفع بلاغ",
+      "ج) التجاهل"
+    ],
+    c: 0
+  },
+  {
+    q: "الفرق بين ضابط صف والضابط؟",
+    a: [
+      "أ) ضابط صف رئيس رقباء – الضابط من ملازم فما فوق",
+      "ب) ضابط صف قائد لواء",
+      "ج) الضابط أقل رتبة"
+    ],
+    c: 0
+  }
+];
+
+let selectedAnswers = [];
+
+function startExam() {
+  document.getElementById("infoPage").style.display = "none";
+  document.getElementById("examPage").style.display = "block";
+
+  let qBox = document.getElementById("questions");
+  qBox.innerHTML = "";
+
+  questionsData.forEach((item, i) => {
+    let card = document.createElement("div");
+    card.className = "question-card";
+
+    let qTitle = document.createElement("p");
+    qTitle.innerHTML = `<strong>${i + 1}- ${item.q}</strong>`;
+    card.appendChild(qTitle);
+
+    item.a.forEach((ans, j) => {
+      let ansBtn = document.createElement("div");
+      ansBtn.className = "answer";
+      ansBtn.innerText = ans;
+
+      ansBtn.onclick = () => {
+        let all = card.querySelectorAll(".answer");
+        all.forEach((a) => a.classList.remove("selected"));
+        ansBtn.classList.add("selected");
+        selectedAnswers[i] = j;
+      };
+
+      card.appendChild(ansBtn);
+    });
+
+    qBox.appendChild(card);
+  });
+}
+
+function finishExam() {
+  let score = 0;
+
+  document.getElementById("examPage").style.display = "none";
+  document.getElementById("resultPage").style.display = "block";
+
+  const cards = document.querySelectorAll(".question-card");
+
+  questionsData.forEach((item, i) => {
+    let selected = selectedAnswers[i];
+    let correct = item.c;
+
+    let answers = cards[i].querySelectorAll(".answer");
+
+    answers[correct].classList.add("correct");
+
+    if (selected !== correct) {
+      answers[selected]?.classList.add("wrong");
+    } else {
+      score++;
+    }
+  });
+
+  let result = document.getElementById("resultBox");
+  let status = score >= 10
+    ? `<span class='pass'>✔ ناجح</span>`
+    : `<span class='fail'>❌ راسب</span>`;
+
+  result.innerHTML = `النتيجة: ${score} / 20 <br><br> ${status}`;
+}
+</script>
+</body>
+</html>
